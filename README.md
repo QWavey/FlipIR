@@ -1,6 +1,10 @@
 # OnePlus IR Remote
 
-A professional infrared remote control application for OnePlus devices featuring iOS-style design and Flipper Zero file compatibility.
+A professional infrared remote control application for Android devices featuring iOS-style design and Flipper Zero file compatibility.
+
+VERIFIED AND TESTED ON THE ONEPLUS 15/ EU MODEL.
+
+DOWNLOAD: https://github.com/QWavey/FlipIR/releases/tag/beta-release
 
 ## Overview
 
