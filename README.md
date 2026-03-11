@@ -10,7 +10,7 @@ VERIFIED AND TESTED ON THE ONEPLUS 15/ EU MODEL.
 <button>Download FlipIR Beta</button>
 
 
-## Overview
+# Overview
 
 OnePlus IR Remote provides a comprehensive solution for controlling IR-enabled devices through your OnePlus smartphone. The application supports multiple device types including TVs, air conditioners, fans, audio systems, and more, with an intuitive Cupertino-style interface.
 
