@@ -1,0 +1,39 @@
+name: flutter_application_1
+description: "OnePlus IR Remote with Flipper Zero Support"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # File handling
+  file_picker: ^10.3.10
+  path_provider: ^2.1.1
+  permission_handler: ^12.0.1
+  archive: ^4.0.9
+  
+  # State management
+  provider: ^6.1.1
+  
+  # Storage
+  shared_preferences: ^2.2.2
+  
+  # UI
+  flutter_colorpicker: ^1.1.0
+  
+  # Network
+  http: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
