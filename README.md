@@ -4,7 +4,11 @@ A professional infrared remote control application for Android devices featuring
 
 VERIFIED AND TESTED ON THE ONEPLUS 15/ EU MODEL.
 
-DOWNLOAD("https://github.com/QWavey/FlipIR/releases/tag/beta-release")
+
+
+<a href="https://github.com/QWavey/FlipIR/releases/tag/beta-release" target="_blank">
+<button>Download FlipIR Beta</button>
+
 
 ## Overview
 
