@@ -1,4 +1,4 @@
-# OnePlus IR Remote
+# IR Remote
 
 A professional infrared remote control application for Android devices featuring iOS-style design and Flipper Zero file compatibility.
 
