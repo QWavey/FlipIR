@@ -1,125 +1,80 @@
-# IR Remote
+# FlipIR
 
-A professional infrared remote control application for Android devices featuring iOS-style design and Flipper Zero file compatibility.
+An Android app that turns the IR blaster on a OnePlus phone into a universal remote. It has an iOS-style interface and can import Flipper Zero `.ir` files. Receiving IR is not supported.
 
-VERIFIED AND TESTED ON THE ONEPLUS 15/ EU MODEL.
+Tested on the OnePlus 15 (EU model).
 
+[Download the beta](https://github.com/QWavey/FlipIR/releases/tag/beta-release)
 
+## Features
 
-<a href="https://github.com/QWavey/FlipIR/releases/tag/beta-release" target="_blank">
-<button>Download FlipIR Beta</button>
-
-
-# Overview
-
-OnePlus IR Remote provides a comprehensive solution for controlling IR-enabled devices through your OnePlus smartphone. The application supports multiple device types including TVs, air conditioners, fans, audio systems, and more, with an intuitive Cupertino-style interface.
-
-## Key Features
-
-### Universal Remote Library
-- Pre-configured remote databases for TV, AC, Fan, LED, Projector, Audio, and Cable Box
+**Remote library**
+- Preconfigured remote databases for TVs, air conditioners, fans, LEDs, projectors, audio systems, and cable boxes
 - Automatic download from curated device libraries
-- Brand and model-specific configurations
-- Custom remote URL support for advanced users
+- Brand- and model-specific configurations
+- Custom remote URLs for advanced users
 
-### File Import Capabilities
-- Flipper Zero `.ir` file format support
-- ZIP archive bulk import
-- Custom IR signal creation
-- File format validation and error handling
+**Import**
+- Flipper Zero `.ir` files
+- Bulk import from ZIP archives
+- Custom IR signals
+- File validation with error messages
 
-### Chain Codes (Automation)
-- Create multi-step automation sequences
-- Support for delays between commands
-- Loop functionality (finite and infinite)
+**Chain codes (automation)**
+- Multi-step sequences with delays between commands
+- Finite or infinite loops
 - Play, edit, and manage saved sequences
-- Search and filter capabilities
+- Search chain codes by name
 
-### Advanced Features
-- Real-time IR signal transmission
-- Multiple protocol support (NEC, Samsung32, RC5, RC6, Sony SIRC)
-- Raw signal handling with custom frequencies
-- Button size customization
-- Haptic and sound feedback
-- Comprehensive settings management
+**Transmission and feedback**
+- Real-time IR transmission
+- Protocols: NEC, Samsung32, RC5, RC6, Sony SIRC
+- Raw signals with custom carrier frequencies
+- Adjustable button size, plus haptic and sound feedback
 
-### User Interface
-- Native iOS Cupertino design system
-- Dark and light mode support
-- Intuitive navigation patterns
-- Search and filter functionality
+**Interface**
+- Light and dark mode
+- Search and filter on the home screen
 - Selection mode for batch operations
-- Beta features toggle for advanced users
+- Beta features toggle
 
 ## Requirements
 
-- **Platform:** Android device with IR blaster (OnePlus 6, 6T, 7, 7 Pro, 7T, 7T Pro, 8, 8 Pro, etc.)
-- **Flutter:** 3.33 or higher
-- **Dart:** 3.0 or higher
-- **Minimum Android API:** 21 (Android 5.0)
+- An Android phone with an IR blaster (OnePlus 6, 6T, 7, 7 Pro, 7T, 7T Pro, 8, 8 Pro, and others)
+- Flutter 3.33 or newer
+- Dart 3.0 or newer
+- Android 5.0 (API 21) or newer
 
-## Installation
+## Install
 
-### From Source
+### From source
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/oneplus-ir-remote.git
-cd oneplus-ir-remote
-```
-
-2. Install dependencies:
-```bash
+git clone https://github.com/QWavey/FlipIR.git
+cd FlipIR
 flutter pub get
-```
-
-3. Build and run:
-```bash
 flutter run
 ```
 
-### Build APK
+### Release APK
 
 ```bash
 flutter build apk --release
 ```
 
-The APK will be available in `build/app/outputs/flutter-apk/app-release.apk`
+The APK ends up in `build/app/outputs/flutter-apk/app-release.apk`.
 
 ## Usage
 
-### Basic Operation
+1. **Add a remote:** tap **Add New Remote**, then choose **Pre-configured Library** or **Import from File**.
+2. **Control a device:** select a remote on the home screen and press its buttons. If the buttons are hard to hit, change the button size in Settings.
+3. **Make a chain code:** open a remote, tap the chain link icon in the toolbar, add commands and delays, then save. Run saved chain codes from the chain codes list.
 
-1. **Import a Remote:**
-   - Tap the "Add New Remote" button
-   - Choose "Pre-configured Library" for universal remotes
-   - Or select "Import from File" for custom `.ir` files
+## Beta features
 
-2. **Control Devices:**
-   - Select a remote from the home screen
-   - Use the virtual buttons to send IR commands
-   - Adjust button size in settings if needed
+Turn on beta features in Settings, open **Custom Remote URLs**, and enter alternative GitHub raw URLs for device libraries. This is useful for custom or updated remote databases.
 
-3. **Create Chain Codes:**
-   - Navigate to a remote control screen
-   - Tap the chain link icon in the toolbar
-   - Add commands and delays to create automation sequences
-   - Save and execute from the chain codes list
-
-### Advanced Features
-
-**Custom Remote URLs (Beta):**
-- Enable beta features in Settings
-- Navigate to Custom Remote URLs
-- Enter alternative GitHub raw URLs for device libraries
-- Useful for custom or updated remote databases
-
-**Search and Filter:**
-- Use the search bar on home screen to find remotes quickly
-- Filter by device type (TV, AC, Fan, etc.)
-- Search chain codes by name
-
-## Project Structure
+## Project structure
 
 ```
 lib/
@@ -148,81 +103,60 @@ lib/
     └── device_type_dialog.dart
 ```
 
-## Technologies
+## Built with
 
 - **Framework:** Flutter 3.33+
-- **UI Library:** Cupertino (iOS-style widgets)
-- **State Management:** Provider 6.x
+- **UI:** Cupertino (iOS-style) widgets
+- **State management:** Provider 6.x
 - **Storage:** SharedPreferences
-- **File Handling:** file_picker, archive
-- **HTTP:** http package for remote downloads
+- **File handling:** file_picker, archive
+- **HTTP:** the `http` package, for remote downloads
 - **Permissions:** permission_handler
 
-## Supported IR Protocols
+## Settings
 
-- NEC (Common consumer electronics)
-- Samsung32 (Samsung devices)
-- RC5 / RC6 (Philips devices)
-- Sony SIRC (Sony devices)
-- Raw signals with custom carrier frequencies
-
-## Configuration
-
-### Settings Options
-
-- **Feedback:** Haptics and sound effects toggle
-- **Button Behavior:** Repeat delay adjustment
-- **Display:** Button labels and size customization
-- **General:** Delete confirmation, bulk operations
-- **Beta Features:** Advanced customization options
+- **Feedback:** haptics and sound effects on or off
+- **Button behavior:** repeat delay
+- **Display:** button labels and size
+- **General:** delete confirmation and bulk operations
+- **Beta features:** advanced customization
 
 ## Contributing
 
-Contributions are welcome. Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Create a Pull Request
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/your-feature`).
+3. Commit your changes (`git commit -am 'Add new feature'`).
+4. Push the branch (`git push origin feature/your-feature`).
+5. Open a pull request.
 
 ## Troubleshooting
 
-**IR Commands Not Working:**
-- Verify your device has an IR blaster
-- Check the remote is correctly imported
-- Ensure proper line of sight to the target device
-- Try adjusting carrier frequency for raw signals
+**IR commands don't work**
+- Check that your phone has an IR blaster.
+- Check that the remote was imported correctly.
+- Make sure you have a clear line of sight to the device.
+- For raw signals, try adjusting the carrier frequency.
 
-**Import Failures:**
-- Validate the `.ir` file format
-- Check file permissions
-- Ensure sufficient storage space
-- Review error messages in debug console
+**Imports fail**
+- Check that the `.ir` file format is valid.
+- Check file permissions and free storage space.
+- Look at the error messages in the debug console.
 
-**App Crashes:**
-- Clear app cache in Settings
-- Reinstall the application
-- Check Android version compatibility
+**The app crashes**
+- Clear the app cache in Settings.
+- Reinstall the app.
+- Check that your Android version is supported.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+MIT. See [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-- Flipper Zero community for IR file format documentation
-- Universal remote control database contributors
-- Flutter and Dart teams for the excellent framework
-
-## Version
-
-Current Version: 2.0.0
+- The Flipper Zero community, for IR file format documentation
+- Contributors to the universal remote databases
+- The Flutter and Dart teams
 
 ## Contact
 
-For bug reports and feature requests, please use the GitHub Issues page.
-
----
-
-Built with Flutter for OnePlus devices with IR capabilities.
+For bug reports and feature requests, use the GitHub Issues page.
