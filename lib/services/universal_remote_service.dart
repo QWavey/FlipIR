@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
@@ -14,6 +15,8 @@ class UniversalRemoteService {
   static const String _cachePrefix = 'universal_library_';
   // Key suffix that records which URL a cached library was downloaded from
   static const String _sourceSuffix = '_source';
+  // Largest library download accepted (bytes)
+  static const int _maxLibraryBytes = 10 * 1024 * 1024;
   
   // Button templates for each device type
   static const Map<String, List<String>> buttonTemplates = {
@@ -148,27 +151,50 @@ class UniversalRemoteService {
         return cached;
       }
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Accept': 'text/plain, application/octet-stream, */*',
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
-        },
-      ).timeout(const Duration(seconds: 30));
+      final bytes = await _readLimited(Uri.parse(url), _maxLibraryBytes);
+      if (bytes == null) return null;
 
-      if (response.statusCode == 200) {
-        final content = utf8.decode(response.bodyBytes, allowMalformed: true);
-        // Only cache content that is a Flipper .ir file
-        if (content.isNotEmpty &&
-            FlipperZeroParser.isValidFlipperFile(content)) {
-          await prefs.setString(cacheKey, content);
-          await prefs.setString(sourceKey, url);
-          return content;
-        }
+      final content = utf8.decode(bytes, allowMalformed: true);
+      // Only cache content that is a Flipper .ir file
+      if (content.isNotEmpty &&
+          FlipperZeroParser.isValidFlipperFile(content)) {
+        await prefs.setString(cacheKey, content);
+        await prefs.setString(sourceKey, url);
+        return content;
       }
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// GETs [uri] and returns the body, or null for a non-200 status, a body
+  /// larger than [maxBytes], or a stalled transfer. The body is read in
+  /// chunks, so an oversized response is abandoned without being buffered.
+  static Future<List<int>?> _readLimited(Uri uri, int maxBytes) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', uri)
+        ..headers.addAll({
+          'Accept': 'text/plain, application/octet-stream, */*',
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
+        });
+      final response =
+          await client.send(request).timeout(const Duration(seconds: 30));
+      if (response.statusCode != 200) return null;
+
+      final declared = response.contentLength;
+      if (declared != null && declared > maxBytes) return null;
+
+      final body = BytesBuilder(copy: false);
+      await for (final chunk
+          in response.stream.timeout(const Duration(seconds: 30))) {
+        body.add(chunk);
+        if (body.length > maxBytes) return null;
+      }
+      return body.takeBytes();
+    } finally {
+      client.close();
     }
   }
 
