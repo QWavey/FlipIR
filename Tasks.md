@@ -1,30 +1,30 @@
 ## GitHub issues (synced 2026-10-24)
 
-- [ ] #2 Custom remote URL accepted without scheme or host check — lib/services/universal_remote_service.dart:133-143; lib/services/settings_service.dart:122-126 — FIX — open
-- [ ] #3 Downloaded library content skips the import validation — lib/services/universal_remote_service.dart:150-155, 364-373 — FIX — open
-- [ ] #4 Downloaded library body has no size limit — lib/services/universal_remote_service.dart:142-153 — FIX — open
-- [ ] #5 ZIP and text imports have no size or entry-count cap — lib/services/universal_remote_service.dart:179-180, 251-252, 311-312; lib/services/flipper_parser.dart:11 — FIX — open
-- [ ] #6 Storage permissions declared that the read code does not use — android/app/src/main/AndroidManifest.xml:5-6 — FIX — open
-- [ ] #7 Android backup left at the platform default — android/app/src/main/AndroidManifest.xml:11-14 — FIX — open
-- [ ] #8 Read failure can wipe the stored remote library — lib/services/storage_service.dart:35-37, 42-52, 60-64 — FIX — open
-- [ ] #9 RC6 encoder drops the address and command bits — lib/models/ir_signal.dart:317-339 — FIX — open
-- [ ] #1 [Bugs] Base NEC frame omits inverted address and command — lib/models/ir_signal.dart:194-195, 215-216 — FIX — open
-- [ ] #1 [Bugs] Unknown protocols silently send a fixed pattern — lib/models/ir_signal.dart:123-125, 453-456; lib/services/ir_transmitter_service.dart:31-45 — FIX — open
-- [ ] #1 [Bugs] Button matching accepts empty and short names — lib/services/universal_remote_service.dart:37-74 — FIX — open
-- [ ] #1 [Bugs] Library cache ignores custom URL changes — lib/services/universal_remote_service.dart:123-140 — FIX — open
-- [ ] #1 [Bugs] Incomplete blocks leak fields into the next signal — lib/services/flipper_parser.dart:52-75, 82-105, 147-160 — FIX — open
-- [ ] #1 [Bugs] Provider ignores save failures and drops unknown-ID updates — lib/providers/remote_provider.dart:130-150 — FIX — open
-- [ ] #1 [Bugs] Malformed raw timings are transmitted as zero — lib/models/ir_signal.dart:458-474 — FIX — open
-- [ ] #1 [Bugs] Validator and type checks are case-sensitive — lib/services/flipper_parser.dart:251-275; lib/models/ir_signal.dart:61, 76 — FIX — open
-- [ ] #1 [Improvements] Failed load is written back over all stored remotes — lib/services/storage_service.dart:35-38, 44-52, 62-64 — FIX — open (same defect as #8)
-- [ ] #1 [Improvements] Hex address and command fields are read in the wrong byte order — lib/models/ir_signal.dart:143-150, 201-205, 230-231, 314-315, 359-362, 389-392, 433-436, 464-468 — FIX — open
-- [ ] #1 [Improvements] RC6 encoder ignores the address and command bits — lib/models/ir_signal.dart:332-340 — FIX — open (same defect as #9)
-- [ ] #1 [Improvements] NEC base frame omits complement bytes; encoder helpers copy-pasted — lib/models/ir_signal.dart:194-195, 207-216, 352 — FIX — open (complement part only; see status when done)
-- [ ] #1 [Improvements] Cached library is returned before the custom URL is checked — lib/services/universal_remote_service.dart:126-140, 153, 158-160 — FIX — open (cache keying is the defect; URL pinning, cache expiry and surfacing download errors are not done)
-- [ ] #1 [Improvements] Button matching accepts empty and short names; some aliases never match — lib/services/universal_remote_service.dart:38-60, 57-58, 99-100 — FIX — open (same defect as the Bugs item above)
-- [ ] #1 [Improvements] Three copy-pasted ZIP importers with silent skips and a fixed per-file sleep — lib/services/universal_remote_service.dart:163-355 — FIX — open (silent skips and strict decoding are the defect; helper extraction, sleep removal and isolate decoding are not done)
-- [ ] #1 [Improvements] Each edit rewrites the whole list, reorders it, and ignores save results — lib/services/storage_service.dart:42-52, 60-64; lib/providers/remote_provider.dart:60-69, 130-150 — FIX — open (order on update and save results are the defect; single-source-of-truth refactor and per-remote keys are not done)
-- [ ] #1 [Improvements] README and pubspec disagree on requirements and library coverage — README.md:44-45, 12, 21, 143; pubspec.yaml:1, 8 — FIX — open (README requirements and claims are the defect; package rename is SKIP, see status when done)
-- [ ] #1 [Improvements] Only test is a stale counter template; core logic has no tests — test/widget_test.dart:14-28 — FIX — open
+- [x] #2 Custom remote URL accepted without scheme or host check — lib/services/universal_remote_service.dart:133-143; lib/services/settings_service.dart:122-126 — FIX — fixed in 6f7836d
+- [x] #3 Downloaded library content skips the import validation — lib/services/universal_remote_service.dart:150-155, 364-373 — FIX — fixed in bb7163e
+- [x] #4 Downloaded library body has no size limit — lib/services/universal_remote_service.dart:142-153 — FIX — fixed in 1b6b16d (10 MiB cap, chosen without checking the upstream file sizes)
+- [x] #5 ZIP and text imports have no size or entry-count cap — lib/services/universal_remote_service.dart:179-180, 251-252, 311-312; lib/services/flipper_parser.dart:11 — FIX — fixed in bb18d5e (ZIP 100 MiB, 5000 entries, 64 MiB uncompressed, 5 MiB per file; the limits are judgement calls; declared entry sizes are trusted)
+- [x] #6 Storage permissions declared that the read code does not use — android/app/src/main/AndroidManifest.xml:5-6 — FIX — fixed in 86d5251 (WRITE removed; READ kept only up to API 32, since older Android reads picker paths directly; not checked on a device)
+- [x] #7 Android backup left at the platform default — android/app/src/main/AndroidManifest.xml:11-14 — FIX — fixed in 78df221
+- [x] #8 Read failure can wipe the stored remote library — lib/services/storage_service.dart:35-37, 42-52, 60-64 — FIX — fixed in e472f01 (entries that cannot be decoded are kept and written back unchanged; a store that is not a readable list is copied to a backup key and writes are refused until it is cleared)
+- [x] #9 RC6 encoder drops the address and command bits — lib/models/ir_signal.dart:317-339 — FIX — fixed in dac6ce9 (1 = mark then space, 0 = space then mark, as in RC5 here; not checked against hardware)
+- [x] #1 [Bugs] Base NEC frame omits inverted address and command — lib/models/ir_signal.dart:194-195, 215-216 — FIX — fixed in c8940f4
+- [x] #1 [Bugs] Unknown protocols silently send a fixed pattern — lib/models/ir_signal.dart:123-125, 453-456; lib/services/ir_transmitter_service.dart:31-45 — FIX — fixed in a5f684e (remote control screen shows the reason; convert mode keeps the signal parsed)
+- [x] #1 [Bugs] Button matching accepts empty and short names — lib/services/universal_remote_service.dart:37-74 — FIX — fixed in f4eaf9f
+- [x] #1 [Bugs] Library cache ignores custom URL changes — lib/services/universal_remote_service.dart:123-140 — FIX — fixed in bb7163e
+- [x] #1 [Bugs] Incomplete blocks leak fields into the next signal — lib/services/flipper_parser.dart:52-75, 82-105, 147-160 — FIX — fixed in aea6eca
+- [x] #1 [Bugs] Provider ignores save failures and drops unknown-ID updates — lib/providers/remote_provider.dart:130-150 — FIX — fixed in 16e93e7
+- [x] #1 [Bugs] Malformed raw timings are transmitted as zero — lib/models/ir_signal.dart:458-474 — FIX — fixed in 716e1d6 (rejected at import; transmit refuses an empty pattern in a5f684e)
+- [x] #1 [Bugs] Validator and type checks are case-sensitive — lib/services/flipper_parser.dart:251-275; lib/models/ir_signal.dart:61, 76 — FIX — fixed in aea6eca
+- [x] #1 [Improvements] Failed load is written back over all stored remotes — lib/services/storage_service.dart:35-38, 44-52, 62-64 — FIX — fixed in e472f01 (same defect as #8)
+- [x] #1 [Improvements] Hex address and command fields are read in the wrong byte order — lib/models/ir_signal.dart:143-150, 201-205, 230-231, 314-315, 359-362, 389-392, 433-436, 464-468 — FIX — fixed in 716e1d6
+- [x] #1 [Improvements] RC6 encoder ignores the address and command bits — lib/models/ir_signal.dart:332-340 — FIX — fixed in dac6ce9 (same defect as #9)
+- [ ] #1 [Improvements] NEC base frame omits complement bytes; encoder helpers copy-pasted — lib/models/ir_signal.dart:194-195, 207-216, 352 — FIX — partly fixed in c8940f4 (complement bytes). Open: merging the copy-pasted encoder helpers and removing the unused Kaseikyo `pulse` constant are refactor and cleanup, not defects, so they are not done
+- [ ] #1 [Improvements] Cached library is returned before the custom URL is checked — lib/services/universal_remote_service.dart:126-140, 153, 158-160 — FIX — partly fixed in bb7163e (cache keyed by source URL). Open: pinning the default URLs to a tag or commit needs a maintainer to choose the upstream ref; cache expiry and showing download errors in the UI were not done
+- [x] #1 [Improvements] Button matching accepts empty and short names; some aliases never match — lib/services/universal_remote_service.dart:38-60, 57-58, 99-100 — FIX — fixed in f4eaf9f (same defect as the Bugs entry; alias map hoisted to a constant)
+- [ ] #1 [Improvements] Three copy-pasted ZIP importers with silent skips and a fixed per-file sleep — lib/services/universal_remote_service.dart:163-355 — FIX — partly fixed in bb18d5e (skipped files are reported, strict decoding relaxed, size caps added). Open: merging the three importers into one loop, removing the 10 ms per-file delay, moving ZIP decoding off the UI isolate, and removing the empty if block are refactor and performance, not defects
+- [ ] #1 [Improvements] Each edit rewrites the whole list, reorders it, and ignores save results — lib/services/storage_service.dart:42-52, 60-64; lib/providers/remote_provider.dart:60-69, 130-150 — FIX — partly fixed in e472f01 (in-place update keeps position; writes serialized) and 16e93e7 (save results checked). Open: making the provider list the single source of truth, per-remote keys, and the unused map in _migrateModelInfo are refactor and performance
+- [x] #1 [Improvements] README and pubspec disagree on requirements and library coverage — README.md:44-45, 12, 21, 143; pubspec.yaml:1, 8 — FIX — fixed in b1d7776 (README claims corrected; the package rename is a separate SKIP entry below)
+- [ ] #1 [Improvements] Only test is a stale counter template; core logic has no tests — test/widget_test.dart:14-28 — FIX — partly fixed in d609abb (stale test replaced by tests for the fixed behaviour; not run under flutter test). Open: no tests yet for StorageService behaviour on corrupt input or for export-then-import round trips
 - [ ] #1 [Improvements] toFlipperFormat() writes no Filetype or Version header — lib/models/ir_signal.dart:56-72 — SKIP — toFlipperFile() in lib/models/ir_remote.dart already writes both headers, and toFlipperFormat() is a per-signal snippet, not a file
 - [ ] #1 [Improvements] Rename flutter_application_1 package and Android package path — pubspec.yaml:1; android/app/src/main/kotlin/com/example/flutter_application_1/ — SKIP — a rename is not a defect; it would change the Android package path and namespace and is outside the scope of these issues
