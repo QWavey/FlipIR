@@ -2,8 +2,9 @@
     <!-- Permissions for IR Blaster and File Access -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.TRANSMIT_IR" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- Only needed on Android 9 and older, where the file picker returns paths
+         that are read directly. Nothing in the app writes to external storage. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     
     <!-- Declare IR feature (optional, but recommended) -->
     <uses-feature android:name="android.hardware.consumerir" android:required="false" />
