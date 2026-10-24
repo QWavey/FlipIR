@@ -92,7 +92,24 @@ class _IrEditorScreenState extends State<IrEditorScreen> {
         signals: parsed.signals,
         updatedAt: DateTime.now(),
       );
-      await provider.updateRemote(updated);
+      final saved = await provider.updateRemote(updated);
+      if (!saved) {
+        await showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Could not save'),
+            content: const Text('The edited remote could not be saved.'),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
 
       setState(() {
         _isDirty = false;

@@ -68,7 +68,26 @@ class _ConverterScreenState extends State<ConverterScreen> {
       signals: updatedSignals,
       updatedAt: DateTime.now(),
     );
-    await provider.updateRemote(updatedRemote);
+    final saved = await provider.updateRemote(updatedRemote);
+    if (!saved) {
+      await showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Could not save'),
+          content: const Text(
+            'The RAW timings could not be saved to this remote.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     await showCupertinoDialog(
       context: context,

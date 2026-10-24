@@ -233,8 +233,9 @@ class _HomeScreenState extends State<HomeScreen> {
           deviceType,
         );
         if (remote != null && remote.signals.isNotEmpty) {
-          await provider.addRemote(remote);
-          successCount++;
+          if (await provider.addRemote(remote)) {
+            successCount++;
+          }
         }
       } catch (e) {
         // Continue on error
@@ -307,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _skippedNote(List<String> skipped) {
     if (skipped.isEmpty) return '';
     final count = skipped.length;
-    return ' ($count file${count > 1 ? "s" : ""} skipped)';
+    return ' ($count not imported)';
   }
 
   Future<void> _importFromZip(String mode) async {
@@ -350,12 +351,17 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final provider = Provider.of<RemoteProvider>(context, listen: false);
+        int savedCount = 0;
         for (final remote in remotes) {
-          await provider.addRemote(remote);
+          if (await provider.addRemote(remote)) {
+            savedCount++;
+          } else {
+            skipped.add(remote.name);
+          }
         }
 
         _showMessage(
-          'Imported ${remotes.length} Remote${remotes.length > 1 ? "s" : ""}${_skippedNote(skipped)}',
+          'Imported $savedCount Remote${savedCount > 1 ? "s" : ""}${_skippedNote(skipped)}',
         );
       } else if (mode == 'merge_universal') {
         // Merge all files into ONE universal remote
@@ -386,7 +392,10 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final provider = Provider.of<RemoteProvider>(context, listen: false);
-        await provider.addRemote(remote);
+        if (!await provider.addRemote(remote)) {
+          _showMessage('Could not save the merged remote', isError: true);
+          return;
+        }
 
         _showMessage(
           'Imported merged universal remote with ${remote.signals.length} signal${remote.signals.length > 1 ? "s" : ""}${_skippedNote(skipped)}',
@@ -421,12 +430,17 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final provider = Provider.of<RemoteProvider>(context, listen: false);
+        int savedCount = 0;
         for (final remote in remotes) {
-          await provider.addRemote(remote);
+          if (await provider.addRemote(remote)) {
+            savedCount++;
+          } else {
+            skipped.add(remote.name);
+          }
         }
 
         _showMessage(
-          'Imported ${remotes.length} universal remote${remotes.length > 1 ? "s" : ""}${_skippedNote(skipped)}',
+          'Imported $savedCount universal remote${savedCount > 1 ? "s" : ""}${_skippedNote(skipped)}',
         );
       }
     } catch (e) {
@@ -528,7 +542,10 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
               listen: false,
             );
-            await provider.addRemote(remote);
+            if (!await provider.addRemote(remote)) {
+              skippedFiles.add(fileData.name);
+              continue;
+            }
 
             successCount++;
             totalButtons += remote.signals.length;
@@ -1493,15 +1510,19 @@ class _HomeScreenState extends State<HomeScreen> {
             isDefaultAction: true,
             onPressed: () async {
               final newName = controller.text.trim();
+              var saved = true;
               if (newName.isNotEmpty) {
                 final updated = remote.copyWith(
                   name: newName,
                   updatedAt: DateTime.now(),
                 );
-                await provider.updateRemote(updated);
+                saved = await provider.updateRemote(updated);
               }
               if (mounted) {
                 Navigator.pop(context);
+              }
+              if (!saved && mounted) {
+                _showMessage('Could not save the new name', isError: true);
               }
             },
             child: const Text('Save'),

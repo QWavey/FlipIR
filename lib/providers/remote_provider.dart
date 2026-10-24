@@ -127,26 +127,46 @@ class RemoteProvider extends ChangeNotifier {
   }
 
   /// Add a new remote
-  Future<void> addRemote(IRRemote remote) async {
+  /// Returns false, and leaves the list unchanged, if the remote is not saved.
+  Future<bool> addRemote(IRRemote remote) async {
     _remotes.add(remote);
-    await StorageService.saveRemote(remote);
+    final saved = await StorageService.saveRemote(remote);
+    if (!saved) {
+      _remotes.remove(remote);
+    }
     notifyListeners();
+    return saved;
   }
 
   /// Update existing remote
-  Future<void> updateRemote(IRRemote remote) async {
+  /// Returns false if no remote has this ID, or if the change is not saved.
+  /// A change that is not saved is rolled back in the list.
+  Future<bool> updateRemote(IRRemote remote) async {
     final index = _remotes.indexWhere((r) => r.id == remote.id);
-    if (index != -1) {
-      _remotes[index] = remote;
-      await StorageService.saveRemote(remote);
-      
-      // Update current remote if it's the one being updated
-      if (_currentRemote?.id == remote.id) {
-        _currentRemote = remote;
-      }
-      
-      notifyListeners();
+    if (index == -1) {
+      print('Cannot update remote ${remote.id}: not in the list');
+      return false;
     }
+
+    final previous = _remotes[index];
+    _remotes[index] = remote;
+    final saved = await StorageService.saveRemote(remote);
+    if (!saved) {
+      final current = _remotes.indexWhere((r) => r.id == remote.id);
+      if (current != -1) {
+        _remotes[current] = previous;
+      }
+      notifyListeners();
+      return false;
+    }
+
+    // Update current remote if it's the one being updated
+    if (_currentRemote?.id == remote.id) {
+      _currentRemote = remote;
+    }
+
+    notifyListeners();
+    return true;
   }
 
   /// Delete a remote
