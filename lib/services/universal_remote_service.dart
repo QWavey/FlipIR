@@ -12,6 +12,8 @@ import 'settings_service.dart';
 
 class UniversalRemoteService {
   static const String _cachePrefix = 'universal_library_';
+  // Key suffix that records which URL a cached library was downloaded from
+  static const String _sourceSuffix = '_source';
   
   // Button templates for each device type
   static const Map<String, List<String>> buttonTemplates = {
@@ -124,11 +126,7 @@ class UniversalRemoteService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cacheKey = '$_cachePrefix$deviceType';
-      final cached = prefs.getString(cacheKey);
-      
-      if (cached != null && cached.isNotEmpty) {
-        return cached;
-      }
+      final sourceKey = '$cacheKey$_sourceSuffix';
 
       // Check for custom URL if beta features are enabled
       String? url;
@@ -141,6 +139,15 @@ class UniversalRemoteService {
       // Only https sources are fetched
       if (!SettingsService.isSecureRemoteUrl(url)) return null;
 
+      // A cached copy is used only if it came from the URL in use now.
+      // Entries with no recorded source predate this check and are re-downloaded.
+      final cached = prefs.getString(cacheKey);
+      if (cached != null &&
+          cached.isNotEmpty &&
+          prefs.getString(sourceKey) == url) {
+        return cached;
+      }
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -151,8 +158,11 @@ class UniversalRemoteService {
 
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes, allowMalformed: true);
-        if (content.isNotEmpty) {
+        // Only cache content that is a Flipper .ir file
+        if (content.isNotEmpty &&
+            FlipperZeroParser.isValidFlipperFile(content)) {
           await prefs.setString(cacheKey, content);
+          await prefs.setString(sourceKey, url);
           return content;
         }
       }
@@ -404,6 +414,7 @@ class UniversalRemoteService {
       final prefs = await SharedPreferences.getInstance();
       for (final type in libraryUrls.keys) {
         await prefs.remove('$_cachePrefix$type');
+        await prefs.remove('$_cachePrefix$type$_sourceSuffix');
       }
     } catch (e) {
       // Ignore errors
