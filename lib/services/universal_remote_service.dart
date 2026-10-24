@@ -17,6 +17,12 @@ class UniversalRemoteService {
   static const String _sourceSuffix = '_source';
   // Largest library download accepted (bytes)
   static const int _maxLibraryBytes = 10 * 1024 * 1024;
+  // Import limits: larger ZIPs are refused, and .ir/.txt files larger than
+  // maxImportFileBytes, or past the entry and total caps, are skipped
+  static const int maxImportFileBytes = 5 * 1024 * 1024;
+  static const int _maxZipBytes = 100 * 1024 * 1024;
+  static const int _maxZipEntries = 5000;
+  static const int _maxZipTotalBytes = 64 * 1024 * 1024;
   
   // Button templates for each device type
   static const Map<String, List<String>> buttonTemplates = {
@@ -198,10 +204,44 @@ class UniversalRemoteService {
     }
   }
 
+  /// Reads and decodes a ZIP chosen by the user. Returns null when the file is
+  /// larger than the import limit.
+  static Future<Archive?> _openZip(String zipPath) async {
+    final file = File(zipPath);
+    if (await file.length() > _maxZipBytes) return null;
+    return ZipDecoder().decodeBytes(await file.readAsBytes());
+  }
+
+  /// The .ir and .txt entries of [archive] that fit within the import limits.
+  /// Names of the entries left out are added to [skipped].
+  static List<ArchiveFile> _selectIrFiles(
+    Archive archive,
+    List<String>? skipped,
+  ) {
+    final selected = <ArchiveFile>[];
+    int totalBytes = 0;
+    for (final file in archive) {
+      if (!file.isFile) continue;
+      if (!file.name.endsWith('.ir') && !file.name.endsWith('.txt')) continue;
+
+      final fileName = file.name.split('/').last;
+      if (selected.length >= _maxZipEntries ||
+          file.size > maxImportFileBytes ||
+          totalBytes + file.size > _maxZipTotalBytes) {
+        skipped?.add(fileName);
+        continue;
+      }
+      totalBytes += file.size;
+      selected.add(file);
+    }
+    return selected;
+  }
+
   /// Import ZIP as merged universal remote (all files → 1 remote with all variations)
   static Future<IRRemote?> importZipAsMergedUniversal({
     Function(int current, int total, String fileName)? onProgress,
     bool Function()? shouldCancel,
+    List<String>? skipped,
   }) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -213,13 +253,10 @@ class UniversalRemoteService {
         return null;
       }
 
-      final zipPath = result.files.single.path!;
-      final bytes = await File(zipPath).readAsBytes();
-      final archive = ZipDecoder().decodeBytes(bytes);
+      final archive = await _openZip(result.files.single.path!);
+      if (archive == null) return null;
 
-      final irFiles = archive.where((file) => 
-        file.isFile && (file.name.endsWith('.ir') || file.name.endsWith('.txt'))
-      ).toList();
+      final irFiles = _selectIrFiles(archive, skipped);
 
       if (irFiles.length > 1) {
         // Warn user about merge
@@ -234,21 +271,27 @@ class UniversalRemoteService {
 
         processedCount++;
         final fileName = file.name.split('/').last;
-        
+
         if (onProgress != null) {
           onProgress(processedCount, irFiles.length, fileName);
         }
-        
+
         try {
-          final content = utf8.decode(file.content as List<int>);
-          
+          final content = utf8.decode(
+            file.content as List<int>,
+            allowMalformed: true,
+          );
+
           if (FlipperZeroParser.isValidFlipperFile(content)) {
             final remote = FlipperZeroParser.parseFlipperFile(content, fileName);
             // Add ALL signals (keep variations)
             allSignals.addAll(remote.signals);
+          } else {
+            skipped?.add(fileName);
           }
         } catch (e) {
-          // Skip invalid files
+          // Skip unreadable files, and report them
+          skipped?.add(fileName);
         }
 
         await Future.delayed(const Duration(milliseconds: 10));
@@ -274,6 +317,7 @@ class UniversalRemoteService {
   static Future<List<IRRemote>> importZipAsMultipleUniversal({
     Function(int current, int total, String fileName)? onProgress,
     bool Function()? shouldCancel,
+    List<String>? skipped,
   }) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -285,13 +329,10 @@ class UniversalRemoteService {
         return [];
       }
 
-      final zipPath = result.files.single.path!;
-      final bytes = await File(zipPath).readAsBytes();
-      final archive = ZipDecoder().decodeBytes(bytes);
+      final archive = await _openZip(result.files.single.path!);
+      if (archive == null) return [];
 
-      final irFiles = archive.where((file) => 
-        file.isFile && (file.name.endsWith('.ir') || file.name.endsWith('.txt'))
-      ).toList();
+      final irFiles = _selectIrFiles(archive, skipped);
 
       List<IRRemote> remotes = [];
       int processedCount = 0;
@@ -301,24 +342,30 @@ class UniversalRemoteService {
 
         processedCount++;
         final fileName = file.name.split('/').last;
-        
+
         if (onProgress != null) {
           onProgress(processedCount, irFiles.length, fileName);
         }
-        
+
         try {
-          final content = utf8.decode(file.content as List<int>);
-          
+          final content = utf8.decode(
+            file.content as List<int>,
+            allowMalformed: true,
+          );
+
           if (FlipperZeroParser.isValidFlipperFile(content)) {
             final remote = FlipperZeroParser.parseFlipperFile(content, fileName);
-            
+
             if (remote.signals.isNotEmpty) {
               // Make it a universal remote (keeps all signal variations)
               remotes.add(remote.copyWith(type: 'Universal'));
             }
+          } else {
+            skipped?.add(fileName);
           }
         } catch (e) {
-          // Skip invalid files
+          // Skip unreadable files, and report them
+          skipped?.add(fileName);
         }
 
         await Future.delayed(const Duration(milliseconds: 10));
@@ -334,6 +381,7 @@ class UniversalRemoteService {
   static Future<List<IRRemote>> importFromZip({
     Function(int current, int total, String fileName)? onProgress,
     bool Function()? shouldCancel,
+    List<String>? skipped,
   }) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -345,13 +393,10 @@ class UniversalRemoteService {
         return [];
       }
 
-      final zipPath = result.files.single.path!;
-      final bytes = await File(zipPath).readAsBytes();
-      final archive = ZipDecoder().decodeBytes(bytes);
+      final archive = await _openZip(result.files.single.path!);
+      if (archive == null) return [];
 
-      final irFiles = archive.where((file) => 
-        file.isFile && (file.name.endsWith('.ir') || file.name.endsWith('.txt'))
-      ).toList();
+      final irFiles = _selectIrFiles(archive, skipped);
 
       List<IRRemote> remotes = [];
       int processedCount = 0;
@@ -361,26 +406,32 @@ class UniversalRemoteService {
 
         processedCount++;
         final fileName = file.name.split('/').last;
-        
+
         if (onProgress != null) {
           onProgress(processedCount, irFiles.length, fileName);
         }
-        
+
         try {
-          final content = utf8.decode(file.content as List<int>);
-          
+          final content = utf8.decode(
+            file.content as List<int>,
+            allowMalformed: true,
+          );
+
           if (FlipperZeroParser.isValidFlipperFile(content)) {
             final remote = FlipperZeroParser.parseFlipperFile(
               content,
               fileName,
             );
-            
+
             if (remote.signals.isNotEmpty) {
               remotes.add(remote);
             }
+          } else {
+            skipped?.add(fileName);
           }
         } catch (e) {
-          // Skip invalid files
+          // Skip unreadable files, and report them
+          skipped?.add(fileName);
         }
 
         await Future.delayed(const Duration(milliseconds: 10));

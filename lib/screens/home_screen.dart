@@ -303,7 +303,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Suffix for an import message that says how many files were skipped
+  String _skippedNote(List<String> skipped) {
+    if (skipped.isEmpty) return '';
+    final count = skipped.length;
+    return ' ($count file${count > 1 ? "s" : ""} skipped)';
+  }
+
   Future<void> _importFromZip(String mode) async {
+    final skipped = <String>[];
     try {
       setState(() {
         _shouldCancelImport = false;
@@ -316,6 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mode == 'regular') {
         // Regular import - each file is a separate remote
         final remotes = await UniversalRemoteService.importFromZip(
+          skipped: skipped,
           onProgress: (current, total, fileName) {
             if (mounted && !_shouldCancelImport) {
               setState(() {
@@ -346,11 +355,12 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         _showMessage(
-          'Imported ${remotes.length} Remote${remotes.length > 1 ? "s" : ""}',
+          'Imported ${remotes.length} Remote${remotes.length > 1 ? "s" : ""}${_skippedNote(skipped)}',
         );
       } else if (mode == 'merge_universal') {
         // Merge all files into ONE universal remote
         final remote = await UniversalRemoteService.importZipAsMergedUniversal(
+          skipped: skipped,
           onProgress: (current, total, fileName) {
             if (mounted && !_shouldCancelImport) {
               setState(() {
@@ -379,12 +389,13 @@ class _HomeScreenState extends State<HomeScreen> {
         await provider.addRemote(remote);
 
         _showMessage(
-          'Imported merged universal remote with ${remote.signals.length} signal${remote.signals.length > 1 ? "s" : ""}',
+          'Imported merged universal remote with ${remote.signals.length} signal${remote.signals.length > 1 ? "s" : ""}${_skippedNote(skipped)}',
         );
       } else {
         // multiple_universal - each file becomes a universal remote
         final remotes =
             await UniversalRemoteService.importZipAsMultipleUniversal(
+              skipped: skipped,
               onProgress: (current, total, fileName) {
                 if (mounted && !_shouldCancelImport) {
                   setState(() {
@@ -415,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         _showMessage(
-          'Imported ${remotes.length} universal remote${remotes.length > 1 ? "s" : ""}',
+          'Imported ${remotes.length} universal remote${remotes.length > 1 ? "s" : ""}${_skippedNote(skipped)}',
         );
       }
     } catch (e) {
@@ -444,6 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (result != null && result.files.isNotEmpty) {
         int successCount = 0;
         int totalButtons = 0;
+        final skippedFiles = <String>[];
 
         // Decide how to handle parsed signals (RAW vs parsed) for this import batch
         bool convertParsedToRaw = false;
@@ -488,10 +500,15 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             final file = File(fileData.path!);
+            if (await file.length() > UniversalRemoteService.maxImportFileBytes) {
+              skippedFiles.add(fileData.name);
+              continue;
+            }
             final content = await file.readAsString();
             final fileName = fileData.name;
 
             if (!FlipperZeroParser.isValidFlipperFile(content)) {
+              skippedFiles.add(fileData.name);
               continue;
             }
 
@@ -502,6 +519,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
 
             if (remote.signals.isEmpty) {
+              skippedFiles.add(fileData.name);
               continue;
             }
 
@@ -515,13 +533,14 @@ class _HomeScreenState extends State<HomeScreen> {
             successCount++;
             totalButtons += remote.signals.length;
           } catch (e) {
-            // Skip file on error
+            // Skip file on error, and report it
+            skippedFiles.add(fileData.name);
           }
         }
 
         if (successCount > 0) {
           _showMessage(
-            'Imported $successCount file${successCount > 1 ? "s" : ""} with $totalButtons button${totalButtons > 1 ? "s" : ""}',
+            'Imported $successCount file${successCount > 1 ? "s" : ""} with $totalButtons button${totalButtons > 1 ? "s" : ""}${_skippedNote(skippedFiles)}',
           );
         } else {
           _showMessage('No Valid Files Found', isError: true);
