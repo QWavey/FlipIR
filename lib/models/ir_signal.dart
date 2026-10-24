@@ -89,11 +89,11 @@ class IRSignal {
     buffer.writeln('name: $name');
     buffer.writeln('type: $type');
 
-    if (type == 'parsed') {
+    if (type.toLowerCase() == 'parsed') {
       buffer.writeln('protocol: $protocol');
       buffer.writeln('address: $address');
       buffer.writeln('command: $command');
-    } else if (type == 'raw') {
+    } else if (type.toLowerCase() == 'raw') {
       buffer.writeln('frequency: $frequency');
       buffer.writeln('duty_cycle: ${dutyCycle?.toStringAsFixed(5)}');
       buffer.writeln('data: $data');
@@ -104,7 +104,7 @@ class IRSignal {
 
   // Convert to Android IR format (carrier frequency in Hz, pattern in microseconds)
   IRTransmitData toAndroidFormat() {
-    if (type == 'parsed') {
+    if (type.toLowerCase() == 'parsed') {
       // Convert parsed protocol to raw pattern
       return _convertParsedToRaw();
     } else {
