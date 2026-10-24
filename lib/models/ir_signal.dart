@@ -303,23 +303,19 @@ class IRSignal {
   }
 
   List<int> _encodeRC6() {
-    // RC6 mode 0 (basic) – approximate but structured:
-    // Leader: 6T mark (≈2666µs), 2T space (≈889µs), T ≈ 444µs.
+    // RC6 mode 0 (basic). Leader: 6T mark, then 2T space, with T = 444 µs.
+    // Every bit is a pair of half-bits of width T: a 1 is mark then space, a 0
+    // is space then mark. The toggle bit (index 4) is double width (2T).
     const int T = 444;
-    List<int> pattern = [6 * T, 2 * T];
 
-    // RC6 mode 0 uses: start bit (1), 3 mode bits (000), toggle bit, 8-bit address, 8-bit command
+    // RC6 mode 0 frame: start bit (1), 3 mode bits (000), toggle bit,
+    // 8-bit address, 8-bit command. Each field is sent most significant bit first.
     final addrHex = address?.replaceAll(' ', '') ?? '00000000';
     final cmdHex = command?.replaceAll(' ', '') ?? '00000000';
     int addr = int.parse(addrHex, radix: 16) & 0xFF;
     int cmd = int.parse(cmdHex, radix: 16) & 0xFF;
 
-    List<int> bits = [];
-    bits.add(1); // start
-    bits.add(0);
-    bits.add(0);
-    bits.add(0); // mode 0
-    bits.add(0); // toggle (we keep 0)
+    List<int> bits = [1, 0, 0, 0, 0]; // start, mode 0, toggle (kept 0)
     for (int i = 7; i >= 0; i--) {
       bits.add((addr >> i) & 0x1);
     }
@@ -327,20 +323,31 @@ class IRSignal {
       bits.add((cmd >> i) & 0x1);
     }
 
-    // RC6 uses bi-phase (Manchester) coding with different timing for the first (start) bit.
-    // For simplicity we encode all bits with 2T high / 2T low (1) or 2T low / 2T high (0).
-    void appendBit(int bit) {
-      if (bit == 1) {
-        pattern.add(2 * T);
-        pattern.add(2 * T);
+    // The pattern alternates mark, space, mark, ... starting with a mark.
+    // Adjacent half-bits at the same level are merged into one duration.
+    List<int> pattern = [];
+    bool lastWasMark = false;
+    void emit(bool mark, int duration) {
+      if (pattern.isNotEmpty && lastWasMark == mark) {
+        pattern[pattern.length - 1] += duration;
       } else {
-        pattern.add(2 * T);
-        pattern.add(2 * T);
+        pattern.add(duration);
+        lastWasMark = mark;
       }
     }
 
-    for (final b in bits) {
-      appendBit(b);
+    emit(true, 6 * T); // leader mark
+    emit(false, 2 * T); // leader space
+
+    for (int index = 0; index < bits.length; index++) {
+      final int half = index == 4 ? 2 * T : T; // toggle bit is double width
+      if (bits[index] == 1) {
+        emit(true, half);
+        emit(false, half);
+      } else {
+        emit(false, half);
+        emit(true, half);
+      }
     }
 
     return pattern;
