@@ -1,3 +1,34 @@
+/// Thrown when a signal cannot be encoded for transmission, for example
+/// because a field is malformed or the protocol is not supported.
+class IRFormatException implements Exception {
+  final String message;
+  IRFormatException(this.message);
+
+  @override
+  String toString() => 'IRFormatException: $message';
+}
+
+/// Reads a Flipper hex field such as "07 00 00 00" as an integer. Each
+/// space-separated token is one byte, and the first byte is the least
+/// significant one, as in Flipper .ir files. Throws [IRFormatException] for
+/// anything that is not a one- or two-digit hex byte.
+int readHexField(String? field, String label) {
+  if (field == null) return 0;
+  final tokens = field.trim().split(RegExp(r'\s+'));
+  int value = 0;
+  for (int i = 0; i < tokens.length; i++) {
+    var token = tokens[i];
+    if (token.startsWith('0x') || token.startsWith('0X')) {
+      token = token.substring(2);
+    }
+    if (!RegExp(r'^[0-9a-fA-F]{1,2}$').hasMatch(token)) {
+      throw IRFormatException('Invalid $label "$field"');
+    }
+    value |= int.parse(token, radix: 16) << (8 * i);
+  }
+  return value;
+}
+
 // IR Signal Model - represents a single IR button/command
 class IRSignal {
   final String name;
@@ -140,13 +171,10 @@ class IRSignal {
 
     List<int> pattern = [4500, 4500]; // Header
 
-    // Parse address and command (hex strings like "07 00 00 00")
-    String addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    String cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-
+    // Address and command are Flipper hex fields (see readHexField)
     // Combine address and command into a 32-bit value (lower 16 bits: address, upper 16 bits: command)
-    final int addressValue = int.parse(addrHex, radix: 16);
-    final int commandValue = int.parse(cmdHex, radix: 16);
+    final int addressValue = readHexField(address, 'address');
+    final int commandValue = readHexField(command, 'command');
     final int combined = (addressValue & 0xFFFF) | ((commandValue & 0xFFFF) << 16);
 
     // Encode 32 bits (LSB first from combined value)
@@ -198,11 +226,8 @@ class IRSignal {
 
     List<int> pattern = [headerPulse, headerSpace];
 
-    String addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    String cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-
-    int addressValue = int.parse(addrHex, radix: 16);
-    int commandValue = int.parse(cmdHex, radix: 16);
+    int addressValue = readHexField(address, 'address');
+    int commandValue = readHexField(command, 'command');
 
     void encodeBits(int value, int bits) {
       for (int i = 0; i < bits; i++) {
@@ -236,10 +261,8 @@ class IRSignal {
     const int T = 888;
 
     // Prepare raw address & command
-    final addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    final cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-    int addr = int.parse(addrHex, radix: 16) & 0x1F; // 5 bits
-    int cmd = int.parse(cmdHex, radix: 16);
+    int addr = readHexField(address, 'address') & 0x1F; // 5 bits
+    int cmd = readHexField(command, 'command');
 
     // Command bits: RC5 uses 6 bits, RC5X uses 7 bits
     final int cmdBits = isExtended ? 7 : 6;
@@ -321,10 +344,8 @@ class IRSignal {
 
     // RC6 mode 0 frame: start bit (1), 3 mode bits (000), toggle bit,
     // 8-bit address, 8-bit command. Each field is sent most significant bit first.
-    final addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    final cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-    int addr = int.parse(addrHex, radix: 16) & 0xFF;
-    int cmd = int.parse(cmdHex, radix: 16) & 0xFF;
+    int addr = readHexField(address, 'address') & 0xFF;
+    int cmd = readHexField(command, 'command') & 0xFF;
 
     List<int> bits = [1, 0, 0, 0, 0]; // start, mode 0, toggle (kept 0)
     for (int i = 7; i >= 0; i--) {
@@ -374,10 +395,8 @@ class IRSignal {
 
     List<int> pattern = [3360, 1650];
 
-    String addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    String cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-    int addr = int.parse(addrHex, radix: 16);
-    int cmd = int.parse(cmdHex, radix: 16);
+    int addr = readHexField(address, 'address');
+    int cmd = readHexField(command, 'command');
 
     // 26-bit address, 10-bit command
     void encodeBits(int value, int bits) {
@@ -404,10 +423,8 @@ class IRSignal {
 
     List<int> pattern = [headerPulse, headerSpace];
 
-    String addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    String cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-    int addr = int.parse(addrHex, radix: 16) & 0x0F; // 4 bits
-    int cmd = int.parse(cmdHex, radix: 16) & 0xFF; // 8 bits
+    int addr = readHexField(address, 'address') & 0x0F; // 4 bits
+    int cmd = readHexField(command, 'command') & 0xFF; // 8 bits
 
     void encodeBits(int value, int bits) {
       for (int i = 0; i < bits; i++) {
@@ -448,10 +465,8 @@ class IRSignal {
 
     List<int> pattern = [headerPulse, bitSpace0];
 
-    String addrHex = address?.replaceAll(' ', '') ?? '00000000';
-    String cmdHex = command?.replaceAll(' ', '') ?? '00000000';
-    int addr = int.parse(addrHex, radix: 16);
-    int cmd = int.parse(cmdHex, radix: 16);
+    int addr = readHexField(address, 'address');
+    int cmd = readHexField(command, 'command');
 
     void encodeBits(int value, int bits) {
       for (int i = 0; i < bits; i++) {
@@ -479,11 +494,15 @@ class IRSignal {
     }
 
     // Parse space-separated timing values
-    List<int> pattern = data!
-        .split(RegExp(r'\s+'))
-        .where((s) => s.isNotEmpty)
-        .map((s) => int.tryParse(s) ?? 0)
-        .toList();
+    List<int> pattern = [];
+    for (final token in data!.split(RegExp(r'\s+'))) {
+      if (token.isEmpty) continue;
+      final value = int.tryParse(token);
+      if (value == null || value < 0) {
+        throw IRFormatException('Invalid timing "$token" in raw data');
+      }
+      pattern.add(value);
+    }
 
     return IRTransmitData(
       carrierFrequency: frequency ?? 38000,

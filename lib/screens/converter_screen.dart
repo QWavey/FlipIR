@@ -46,7 +46,17 @@ class _ConverterScreenState extends State<ConverterScreen> {
       if (s.type == 'raw' && s.data != null && s.data!.isNotEmpty) {
         updatedSignals.add(s);
       } else {
-        final tx = s.toAndroidFormat();
+        IRTransmitData? tx;
+        try {
+          tx = s.toAndroidFormat();
+        } on IRFormatException {
+          tx = null;
+        }
+        if (tx == null) {
+          // Cannot be converted (malformed fields): keep the signal unchanged
+          updatedSignals.add(s);
+          continue;
+        }
         updatedSignals.add(
           IRSignal(
             name: s.name,
