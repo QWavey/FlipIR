@@ -44,43 +44,78 @@ class UniversalRemoteService {
     'AC': 'https://raw.githubusercontent.com/DarkFlippers/unleashed-firmware/dev/applications/main/infrared/resources/infrared/assets/ac.ir',
   };
 
-  /// Match signal name to button template
-  static bool _matchesButton(String signalName, String buttonName) {
-    final signal = signalName.toLowerCase().replaceAll('_', '').replaceAll('-', '');
-    final button = buttonName.toLowerCase().replaceAll('_', '').replaceAll('-', '').replaceAll('+', 'plus').replaceAll('minus', '');
-    
-    // Direct match
-    if (signal.contains(button) || button.contains(signal)) {
-      return true;
-    }
-    
-    // Special mappings
-    final Map<String, List<String>> aliases = {
-      'power': ['pwr', 'power', 'onoff', 'on'],
-      'volup': ['volumeup', 'volplus', 'vol+', 'volume+'],
-      'voldown': ['volumedown', 'volminus', 'vol-', 'volume-'],
-      'chnext': ['chup', 'channelup', 'ch+', 'chplus'],
-      'chprev': ['chdown', 'channeldown', 'ch-', 'chminus'],
-      'brightnessplus': ['brightup', 'brtup', 'brt+', 'bright+'],
-      'brightnessminus': ['brightdown', 'brtdown', 'brt-', 'bright-'],
-      'speedplus': ['speedup', 'fanup', 'fanplus'],
-      'speedminus': ['speeddown', 'fandown', 'fanminus'],
-      'coolplus': ['coolup', 'cool+', 'cooleup'],
-      'coolminus': ['cooldown', 'cool-', 'cooldown'],
-      'heatplus': ['heatup', 'heat+'],
-      'heatminus': ['heatdown', 'heat-'],
-    };
-    
-    for (final entry in aliases.entries) {
-      if (button.contains(entry.key)) {
-        for (final alias in entry.value) {
-          if (signal.contains(alias)) {
-            return true;
-          }
+  // Alternative names for each button, keyed by the button's normalized name
+  static const Map<String, List<String>> _buttonAliases = {
+    'power': ['pwr', 'power', 'onoff', 'on'],
+    'volup': ['volumeup', 'volplus', 'vol+', 'volume+'],
+    'voldown': ['volumedown', 'volminus', 'vol-', 'volume-'],
+    'chnext': ['chup', 'channelup', 'ch+', 'chplus'],
+    'chprev': ['chdown', 'channeldown', 'ch-', 'chminus'],
+    'brightnessplus': ['brightup', 'brtup', 'brt+', 'bright+'],
+    'brightnessminus': ['brightdown', 'brtdown', 'brt-', 'bright-'],
+    'speedplus': ['speedup', 'fanup', 'fanplus'],
+    'speedminus': ['speeddown', 'fandown', 'fanminus'],
+    'coolplus': ['coolup', 'cool+'],
+    'coolminus': ['cooldown', 'cool-'],
+    'heatplus': ['heatup', 'heat+'],
+    'heatminus': ['heatdown', 'heat-'],
+  };
+
+  /// Splits a name into lower-case words. "+" and "-" become the words "plus"
+  /// and "minus", so "Vol-" and "Vol_down" are not confused.
+  static List<String> _nameWords(String name) {
+    return name
+        .toLowerCase()
+        .replaceAll('+', ' plus ')
+        .replaceAll('-', ' minus ')
+        .split(RegExp(r'[^\p{L}\p{N}]+', unicode: true))
+        .where((word) => word.isNotEmpty)
+        .toList();
+  }
+
+  /// True when [needle] occurs in [haystack] as a run of whole words.
+  static bool _containsWords(List<String> haystack, List<String> needle) {
+    if (needle.isEmpty || needle.length > haystack.length) return false;
+    for (int start = 0; start + needle.length <= haystack.length; start++) {
+      bool same = true;
+      for (int i = 0; i < needle.length; i++) {
+        if (haystack[start + i] != needle[i]) {
+          same = false;
+          break;
         }
       }
+      if (same) return true;
     }
-    
+    return false;
+  }
+
+  /// Match signal name to button template. Names match when they are equal
+  /// once separators are ignored, or when the button name or an alias appears
+  /// as whole words in the signal name. A signal with no name matches nothing.
+  static bool _matchesButton(String signalName, String buttonName) {
+    final signalWords = _nameWords(signalName);
+    if (signalWords.isEmpty) return false;
+    final signalJoined = signalWords.join();
+
+    final buttonWords = _nameWords(buttonName);
+    final buttonJoined = buttonWords.join();
+
+    // Same name, ignoring separators (e.g. "Vol_up" and "volup")
+    if (signalJoined == buttonJoined) return true;
+
+    // Button name as whole words (e.g. "Power_toggle")
+    if (_containsWords(signalWords, buttonWords)) return true;
+
+    // Aliases of this button
+    final aliases = _buttonAliases[buttonJoined];
+    if (aliases == null) return false;
+    for (final alias in aliases) {
+      final aliasWords = _nameWords(alias);
+      if (signalJoined == aliasWords.join() ||
+          _containsWords(signalWords, aliasWords)) {
+        return true;
+      }
+    }
     return false;
   }
 
