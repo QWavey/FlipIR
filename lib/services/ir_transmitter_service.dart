@@ -31,6 +31,10 @@ class IRTransmitterService {
   static Future<bool> transmit(IRSignal signal) async {
     try {
       final transmitData = signal.toAndroidFormat();
+      if (transmitData.pattern.isEmpty) {
+        print('Nothing to transmit for ${signal.name}');
+        return false;
+      }
       
       final bool? result = await _channel.invokeMethod('transmit', {
         'carrierFrequency': transmitData.carrierFrequency,
@@ -49,6 +53,7 @@ class IRTransmitterService {
     required int carrierFrequency,
     required List<int> pattern,
   }) async {
+    if (pattern.isEmpty) return false;
     try {
       final bool? result = await _channel.invokeMethod('transmit', {
         'carrierFrequency': carrierFrequency,

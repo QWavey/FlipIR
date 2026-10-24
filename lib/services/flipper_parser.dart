@@ -178,6 +178,9 @@ class FlipperZeroParser {
     // If requested and this is a parsed (protocol-based) signal, convert it
     // into a RAW timing pattern at parse time.
     if (convertParsedToRaw && type == 'parsed') {
+      // A protocol that cannot be converted stays parsed, so that transmitting
+      // it reports the error instead of dropping the button
+      if (!IRSignal.isSupportedProtocol(protocol)) return baseSignal;
       final transmitData = _tryConvert(baseSignal);
       if (transmitData == null) return null;
       final rawData = transmitData.pattern.join(' ');

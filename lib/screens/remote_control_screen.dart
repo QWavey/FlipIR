@@ -25,8 +25,34 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   double _variationProgress = 0.0;
   String _currentButtonName = '';
 
+  void _showSendError(String buttonName, String reason) {
+    if (!mounted) return;
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text('Cannot send $buttonName'),
+        content: Text(reason),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _sendAllVariations(String buttonName, List<IRSignal> allVariations) async {
     if (allVariations.isEmpty) return;
+
+    // A button whose variations are all malformed or unsupported is reported
+    // instead of being sent as a made-up frame
+    final errors = allVariations.map((s) => s.transmitError).toList();
+    if (errors.every((e) => e != null)) {
+      _showSendError(buttonName, errors.first!);
+      return;
+    }
 
     // Only show progress UI for universal remotes (multiple variations)
     final showProgress = allVariations.length > 1;

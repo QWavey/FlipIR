@@ -53,6 +53,25 @@ class IRSignal {
     this.model,
   });
 
+  /// Protocols that toAndroidFormat can encode into a frame
+  static const Set<String> supportedProtocols = {
+    'samsung32', 'kaseikyo', 'nec', 'necext', 'nec42', 'nec42ext',
+    'rc5', 'rc5x', 'rc6', 'rca', 'sony', 'sirc', 'sirc15', 'sirc20',
+  };
+
+  static bool isSupportedProtocol(String? protocol) =>
+      supportedProtocols.contains(protocol?.toLowerCase() ?? '');
+
+  /// Why this signal cannot be transmitted, or null when it can.
+  String? get transmitError {
+    try {
+      toAndroidFormat();
+      return null;
+    } on IRFormatException catch (e) {
+      return e.message;
+    }
+  }
+
   // Convert to JSON for storage
   Map<String, dynamic> toJson() {
     return {
@@ -152,8 +171,7 @@ class IRSignal {
         pattern = _encodeSony(proto);
         break;
       default:
-        // Generic encoding
-        pattern = _encodeGeneric();
+        throw IRFormatException('Unsupported protocol "$protocol"');
     }
 
     return IRTransmitData(
@@ -481,11 +499,6 @@ class IRSignal {
     encodeBits(addr, addrBits);
 
     return pattern;
-  }
-
-  List<int> _encodeGeneric() {
-    // Generic fallback
-    return [9000, 4500, 560, 560, 560];
   }
 
   IRTransmitData _parseRawData() {
