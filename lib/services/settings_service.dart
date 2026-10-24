@@ -119,10 +119,20 @@ class SettingsService {
     await prefs.setString(_parsedImportPolicyKey, policy);
   }
 
-  static Future<void> setCustomRemoteUrl(String deviceType, String url) async {
+  /// True when [url] is an absolute https URL with a host.
+  static bool isSecureRemoteUrl(String url) {
+    final uri = Uri.tryParse(url);
+    return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+  }
+
+  /// Stores a custom library URL. Anything that is not an https URL is
+  /// rejected: nothing is stored and false is returned.
+  static Future<bool> setCustomRemoteUrl(String deviceType, String url) async {
+    if (!isSecureRemoteUrl(url)) return false;
     _customRemoteUrls[deviceType] = url;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_customRemoteUrlsKey, jsonEncode(_customRemoteUrls));
+    return true;
   }
 
   static Future<void> removeCustomRemoteUrl(String deviceType) async {

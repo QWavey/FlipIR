@@ -138,6 +138,8 @@ class UniversalRemoteService {
       // Fall back to default URL
       url ??= libraryUrls[deviceType];
       if (url == null) return null;
+      // Only https sources are fetched
+      if (!SettingsService.isSecureRemoteUrl(url)) return null;
 
       final response = await http.get(
         Uri.parse(url),

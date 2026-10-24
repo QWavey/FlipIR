@@ -43,9 +43,9 @@ class _CustomUrlsScreenState extends State<CustomUrlsScreen> {
       await SettingsService.removeCustomRemoteUrl(deviceType);
       _customUrls.remove(deviceType);
     } else {
-      // Validate URL format
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        _showError('URL must start with http:// or https://');
+      // Only https URLs with a host are accepted
+      if (!SettingsService.isSecureRemoteUrl(url)) {
+        _showError('URL must start with https:// and include a host');
         return;
       }
       await SettingsService.setCustomRemoteUrl(deviceType, url);
