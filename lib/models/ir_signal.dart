@@ -212,8 +212,19 @@ class IRSignal {
       }
     }
 
-    encodeBits(addressValue, addrBits);
-    encodeBits(commandValue, cmdBits);
+    if (variant == 'nec') {
+      // Base NEC sends the address, its complement, the command and its
+      // complement: 32 data bits, least significant bit first.
+      final int address8 = addressValue & 0xFF;
+      final int command8 = commandValue & 0xFF;
+      encodeBits(address8, 8);
+      encodeBits(~address8 & 0xFF, 8);
+      encodeBits(command8, 8);
+      encodeBits(~command8 & 0xFF, 8);
+    } else {
+      encodeBits(addressValue, addrBits);
+      encodeBits(commandValue, cmdBits);
+    }
 
     pattern.add(bitPulse); // End pulse
     return pattern;
