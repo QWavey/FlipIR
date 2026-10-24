@@ -9,7 +9,7 @@ Tested on the OnePlus 15 (EU model).
 ## Features
 
 **Remote library**
-- Preconfigured remote databases for TVs, air conditioners, fans, LEDs, projectors, audio systems, and cable boxes
+- Preconfigured remote databases for TVs, air conditioners, fans, LEDs, projectors, and audio systems
 - Automatic download from curated device libraries
 - Brand- and model-specific configurations
 - Custom remote URLs for advanced users
@@ -18,7 +18,7 @@ Tested on the OnePlus 15 (EU model).
 - Flipper Zero `.ir` files
 - Bulk import from ZIP archives
 - Custom IR signals
-- File validation with error messages
+- File validation, with a count of files that could not be imported
 
 **Chain codes (automation)**
 - Multi-step sequences with delays between commands
@@ -41,8 +41,7 @@ Tested on the OnePlus 15 (EU model).
 ## Requirements
 
 - An Android phone with an IR blaster (OnePlus 6, 6T, 7, 7 Pro, 7T, 7T Pro, 8, 8 Pro, and others)
-- Flutter 3.33 or newer
-- Dart 3.0 or newer
+- Dart 3.10.8 or newer, the minimum set in `pubspec.yaml` (use a Flutter release that includes it)
 - Android 5.0 (API 21) or newer
 
 ## Install
@@ -105,7 +104,7 @@ lib/
 
 ## Built with
 
-- **Framework:** Flutter 3.33+
+- **Framework:** Flutter (with Dart 3.10.8 or newer)
 - **UI:** Cupertino (iOS-style) widgets
 - **State management:** Provider 6.x
 - **Storage:** SharedPreferences
@@ -140,7 +139,7 @@ lib/
 **Imports fail**
 - Check that the `.ir` file format is valid.
 - Check file permissions and free storage space.
-- Look at the error messages in the debug console.
+- Check the import message for how many files were not imported.
 
 **The app crashes**
 - Clear the app cache in Settings.
